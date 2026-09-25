@@ -13,9 +13,9 @@ elif [[ -f android-client/keystore/polaris.p12 ]]; then
 fi
 
 python3 - <<'PY' "$MANIFEST"
-import pathlib, sys
+import pathlib, sys, re
 p = pathlib.Path(sys.argv[1])
-t = p.read_text()
+t = p.read_text(encoding="utf-8")
 perms = [
     '    <uses-permission android:name="android.permission.INTERNET"/>',
     '    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>',
@@ -28,8 +28,9 @@ for perm in perms:
     if perm.split('android:name=')[1] not in t:
         t = t.replace("<application", perm + "\n    <application", 1)
 if 'android:usesCleartextTraffic' not in t:
-    t = t.replace("<application", '<application android:usesCleartextTraffic="true" android:label="پولاریس"', 1)
-p.write_text(t)
+    t = t.replace("<application", '<application android:usesCleartextTraffic="true"', 1)
+t = re.sub(r'android:label="[^"]*"', 'android:label="Polaris"', t, count=1)
+p.write_text(t, encoding="utf-8")
 print("patched", p)
 PY
 
