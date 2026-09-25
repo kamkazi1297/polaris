@@ -87,7 +87,9 @@ jobs:
           tag_name: v1.3.${{ github.run_number }}
           name: Polaris v1.3.${{ github.run_number }}
           body: |
-            ## ویندوز — اگر نسخه قبل باز نمی‌شد این را بگیرید
+            ## ویندوز — رفع کرش باز نشدن
+            نسخه قبل با خطای SplitterDistance بسته می‌شد. این نسخه آن را ندارد.
+
             **Polaris-Setup.exe را نصب کنید** (نه فایل داخل زیپ).
 
             1. Setup را اجرا کنید. میانبر دسکتاپ ساخته می‌شود.

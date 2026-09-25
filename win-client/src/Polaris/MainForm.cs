@@ -104,16 +104,19 @@ sealed class MainForm : Form
             Font = new Font("Consolas", 9f),
         };
 
-        var split = new SplitContainer
+        var split = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
-            SplitterDistance = 620,
+            ColumnCount = 2,
+            RowCount = 1,
             BackColor = Color.FromArgb(42, 46, 54),
-            Panel1MinSize = 360,
-            Panel2MinSize = 240,
+            Padding = new Padding(0),
+            Margin = new Padding(0),
         };
-        split.Panel1.Controls.Add(_list);
-        split.Panel2.Controls.Add(_detail);
+        split.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 62f));
+        split.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 38f));
+        split.Controls.Add(_list, 0, 0);
+        split.Controls.Add(_detail, 1, 0);
 
         _status = new Label
         {
