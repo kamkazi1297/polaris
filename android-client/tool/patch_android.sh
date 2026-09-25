@@ -13,12 +13,8 @@ elif [[ -f android-client/keystore/polaris.p12 ]]; then
   cp android-client/keystore/polaris.p12 "$ROOT/android/app/keystore/polaris.p12"
 fi
 
-touch "$PROPS"
-grep -q "android.bundle.enableUncompressedNativeLibs" "$PROPS" || echo "android.bundle.enableUncompressedNativeLibs=false" >> "$PROPS"
-grep -q "android.ndk.suppressMinSdkVersionError" "$PROPS" || echo "android.ndk.suppressMinSdkVersionError=21" >> "$PROPS"
-
 python3 - <<'PY' "$MANIFEST"
-import pathlib, sys, re
+import pathlib, sys
 p = pathlib.Path(sys.argv[1])
 t = p.read_text()
 perms = [
@@ -59,6 +55,11 @@ if p.suffix == ".kts":
             keyAlias = "polaris"
             keyPassword = "polaris12"
         }
+    }
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
     }""",
             1,
         )
@@ -67,7 +68,7 @@ if p.suffix == ".kts":
             'signingConfig = signingConfigs.getByName("debug")',
             'signingConfig = signingConfigs.getByName("release")',
         )
-    elif "signingConfig =" not in t.split("release")[1][:400] if "release" in t else True:
+    elif "release" in t and "signingConfig =" not in t.split("release", 1)[1][:400]:
         t = t.replace(
             "release {",
             """release {
@@ -75,7 +76,7 @@ if p.suffix == ".kts":
             1,
         )
 else:
-    t = re.sub(r"minSdk(?:Version)?\s+\d+", "minSdk 24", t)
+    t = re.sub(r"minSdk(?:Version)?\\s+\\d+", "minSdk 24", t)
     t = t.replace("minSdkVersion flutter.minSdkVersion", "minSdkVersion 24")
 p.write_text(t)
 print("patched", p)
