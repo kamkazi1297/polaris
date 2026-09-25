@@ -2,7 +2,6 @@
 set -euo pipefail
 ROOT="${1:?flutter project root}"
 MANIFEST="$ROOT/android/app/src/main/AndroidManifest.xml"
-PROPS="$ROOT/android/gradle.properties"
 APP_KTS="$ROOT/android/app/build.gradle.kts"
 APP_GRD="$ROOT/android/app/build.gradle"
 
@@ -44,7 +43,7 @@ t = p.read_text()
 if p.suffix == ".kts":
     t = re.sub(r"minSdk\s*=\s*\d+", "minSdk = 24", t)
     t = t.replace("minSdk = flutter.minSdkVersion", "minSdk = 24")
-    if "signingConfigs" not in t:
+    if 'create("release")' not in t:
         t = t.replace(
             "android {",
             """android {
@@ -63,21 +62,14 @@ if p.suffix == ".kts":
     }""",
             1,
         )
-    if 'signingConfig = signingConfigs.getByName("debug")' in t:
-        t = t.replace(
-            'signingConfig = signingConfigs.getByName("debug")',
-            'signingConfig = signingConfigs.getByName("release")',
-        )
-    elif "release" in t and "signingConfig =" not in t.split("release", 1)[1][:400]:
-        t = t.replace(
-            "release {",
-            """release {
-            signingConfig = signingConfigs.getByName("release")""",
-            1,
-        )
+    t = t.replace(
+        'signingConfig = signingConfigs.getByName("debug")',
+        'signingConfig = signingConfigs.getByName("release")',
+    )
 else:
     t = re.sub(r"minSdk(?:Version)?\\s+\\d+", "minSdk 24", t)
     t = t.replace("minSdkVersion flutter.minSdkVersion", "minSdkVersion 24")
 p.write_text(t)
 print("patched", p)
+print(t)
 PY
