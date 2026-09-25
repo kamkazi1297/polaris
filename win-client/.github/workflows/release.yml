@@ -1,0 +1,13 @@
+name: Build Windows (local copy)
+
+# Canonical workflow lives at repo root: .github/workflows/windows-release.yml
+# This file is kept so the win-client folder stays self-contained for local clones.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Use the root workflow .github/workflows/windows-release.yml"

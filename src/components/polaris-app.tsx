@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Compass, Gauge, RotateCcw, Timer } from "lucide-react";
+import { Compass, Download, Gauge, RotateCcw, Timer } from "lucide-react";
 import { toast } from "sonner";
 import { ConfigDetail } from "@/components/config-detail";
 import { ConfigList } from "@/components/config-list";
@@ -115,6 +115,16 @@ export function PolarisApp() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <Button asChild variant="default" size="sm">
+              <a
+                href="https://github.com/kamkazi1297/polaris/releases/latest"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Download />
+                دانلود ویندوز
+              </a>
+            </Button>
             <ImportDialog />
             <Button variant="secondary" onClick={testAll} disabled={testingAll || !entries.length}>
               <Timer />
@@ -135,10 +145,10 @@ export function PolarisApp() {
           </div>
         </div>
         <p className="border-t border-border px-4 py-2 text-xs leading-relaxed text-subtle">
-          این نسخه مرورگر است و فایل ویندوز (.exe) نیست: ترافیک سیستم را تونل نمی‌کند و جایگزین v2rayN
-          نمی‌شود. لینک، JSON نپسترنت، Clash و Xray را می‌خواند؛ نوع، امنیت و مکان را نشان می‌دهد؛ فقط تست
-          دیلی می‌گیرد و کانفیگ‌هایی که سرورشان ایران است (مکان عوض نمی‌شود) را «مشکل‌دار» می‌زند. خروجی را
-          در کلاینت واقعی ویندوز وارد کنید.
+          پیش‌نمایش مرورگر ترافیک ویندوز را تونل نمی‌کند. برای وصل شدن واقعی، دکمهٔ «دانلود ویندوز» را بزنید
+          و <code className="font-mono text-fg">Polaris.exe</code> را اجرا کنید. اینجا لینک / JSON نپسترنت /
+          Clash را می‌چسبانید؛ نوع، امنیت و مکان را می‌بینید؛ فقط تست دیلی می‌گیرد و اگر سرور ایران باشد
+          «مشکل‌دار» می‌زند.
         </p>
       </header>
 

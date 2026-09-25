@@ -1,0 +1,49 @@
+name: Build Windows
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Publish
+        run: |
+          dotnet publish win-client/src/Polaris/Polaris.csproj -c Release -r win-x64 --self-contained true `
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true -p:DebugType=None -o dist
+
+      - name: Zip
+        run: Compress-Archive -Path dist/Polaris.exe -DestinationPath Polaris-windows-x64.zip -Force
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Polaris-windows-x64
+          path: Polaris-windows-x64.zip
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.1.${{ github.run_number }}
+          name: Polaris Windows v1.1.${{ github.run_number }}
+          body: |
+            کلاینت ویندوز پولاریس — شبیه v2rayN.
+
+            1. فایل `Polaris-windows-x64.zip` را دانلود کنید.
+            2. از زیپ خارج کنید و `Polaris.exe` را اجرا کنید.
+            3. اگر SmartScreen آمد: **More info → Run anyway**.
+            4. بار اول هستهٔ Xray (یا sing-box) از گیت‌هاب رسمی دانلود می‌شود.
+
+            **قابلیت‌ها:** ورود لینک / JSON نپسترنت / Clash / Xray / سابسکریپشن، تست دیلی، مکان سرور، تشخیص کانفیگ ایران (مشکل‌دار)، گزارش امنیت، وصل شدن با پروکسی سیستم ویندوز.
+          files: Polaris-windows-x64.zip
+          make_latest: true
