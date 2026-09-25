@@ -85,6 +85,14 @@ public sealed class ClientSettings
     public string DomainStrategy { get; set; } = "IPIfNonMatch";
 }
 
+public sealed class Subscription
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+    public string Name { get; set; } = "";
+    public string Url { get; set; } = "";
+    public string? LastUpdate { get; set; }
+}
+
 public sealed class ConfigEntry
 {
     public ProxyConfig Config { get; set; } = new();
@@ -96,6 +104,8 @@ public sealed class AppState
 {
     public List<ConfigEntry> Entries { get; set; } = new();
     public ClientSettings Settings { get; set; } = new();
+    public List<Subscription> Subscriptions { get; set; } = new();
+    public string SortMode { get; set; } = "valid";
 }
 
 static class ProtocolUi

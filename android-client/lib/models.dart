@@ -122,9 +122,7 @@ class ProxyConfig {
       publicKey: "${j["publicKey"] ?? ""}",
       shortId: "${j["shortId"] ?? ""}",
       spiderX: "${j["spiderX"] ?? ""}",
-      extra: extraRaw is Map
-          ? extraRaw.map((k, v) => MapEntry("$k", "$v"))
-          : {},
+      extra: extraRaw is Map ? extraRaw.map((k, v) => MapEntry("$k", "$v")) : {},
       source: "${j["source"] ?? "uri"}",
       raw: "${j["raw"] ?? ""}",
       group: "${j["group"] ?? ""}",
@@ -210,6 +208,78 @@ class ConfigEntry {
         config: ProxyConfig.fromJson(Map<String, dynamic>.from(j["config"] as Map)),
         probe: j["probe"] is Map ? ProbeResult.fromJson(Map<String, dynamic>.from(j["probe"] as Map)) : null,
         health: "${j["health"] ?? "unknown"}",
+      );
+}
+
+class Subscription {
+  String id;
+  String name;
+  String url;
+  String? lastUpdate;
+
+  Subscription({String? id, this.name = "", this.url = "", this.lastUpdate})
+      : id = id ?? DateTime.now().microsecondsSinceEpoch.toString();
+
+  Map<String, dynamic> toJson() => {
+        "id": id,
+        "name": name,
+        "url": url,
+        "lastUpdate": lastUpdate,
+      };
+
+  factory Subscription.fromJson(Map<String, dynamic> j) => Subscription(
+        id: "${j["id"] ?? ""}",
+        name: "${j["name"] ?? ""}",
+        url: "${j["url"] ?? ""}",
+        lastUpdate: j["lastUpdate"]?.toString(),
+      );
+}
+
+class ClientSettings {
+  bool muxEnabled;
+  int muxConcurrency;
+  bool fragmentEnabled;
+  String dnsPrimary;
+  String dnsSecondary;
+  bool bypassLan;
+  bool bypassIran;
+  bool blockAds;
+  String fingerprint;
+
+  ClientSettings({
+    this.muxEnabled = false,
+    this.muxConcurrency = 8,
+    this.fragmentEnabled = false,
+    this.dnsPrimary = "1.1.1.1",
+    this.dnsSecondary = "8.8.8.8",
+    this.bypassLan = true,
+    this.bypassIran = true,
+    this.blockAds = false,
+    this.fingerprint = "chrome",
+  });
+
+  Map<String, dynamic> toJson() => {
+        "muxEnabled": muxEnabled,
+        "muxConcurrency": muxConcurrency,
+        "fragmentEnabled": fragmentEnabled,
+        "dnsPrimary": dnsPrimary,
+        "dnsSecondary": dnsSecondary,
+        "bypassLan": bypassLan,
+        "bypassIran": bypassIran,
+        "blockAds": blockAds,
+        "fingerprint": fingerprint,
+      };
+
+  factory ClientSettings.fromJson(Map<String, dynamic> j) => ClientSettings(
+        muxEnabled: j["muxEnabled"] == true,
+        muxConcurrency: int.tryParse("${j["muxConcurrency"]}") ?? 8,
+        fragmentEnabled: j["fragmentEnabled"] == true,
+        dnsPrimary: "${j["dnsPrimary"] ?? "1.1.1.1"}",
+        dnsSecondary: "${j["dnsSecondary"] ?? "8.8.8.8"}",
+        bypassLan: j["bypassLan"] != false,
+        bypassIran: j["bypassIran"] != false,
+        blockAds: j["blockAds"] == true,
+        fingerprint: "${j["fingerprint"] ?? "chrome"}",
       );
 }
 

@@ -2,10 +2,50 @@ import 'dart:convert';
 
 import 'models.dart';
 
-String xrayFullConfig(ProxyConfig c) {
-  final outbound = _outbound(c);
+String xrayFullConfig(ProxyConfig c, [ClientSettings? settings]) {
+  final s = settings ?? ClientSettings();
+  final outbound = _outbound(c, s);
+  final rules = <Map<String, dynamic>>[];
+  if (s.bypassLan) {
+    rules.add({
+      "type": "field",
+      "ip": ["geoip:private"],
+      "outboundTag": "direct",
+    });
+  }
+  if (s.bypassIran) {
+    rules.add({
+      "type": "field",
+      "domain": ["geosite:ir"],
+      "outboundTag": "direct",
+    });
+    rules.add({
+      "type": "field",
+      "ip": ["geoip:ir"],
+      "outboundTag": "direct",
+    });
+  }
+  if (s.blockAds) {
+    rules.add({
+      "type": "field",
+      "domain": ["geosite:category-ads-all"],
+      "outboundTag": "block",
+    });
+  }
+  rules.add({
+    "type": "field",
+    "inboundTag": ["socks"],
+    "outboundTag": "proxy",
+  });
+
   return const JsonEncoder.withIndent("  ").convert({
     "log": {"loglevel": "warning"},
+    "dns": {
+      "servers": [
+        if (s.dnsPrimary.isNotEmpty) s.dnsPrimary,
+        if (s.dnsSecondary.isNotEmpty) s.dnsSecondary,
+      ],
+    },
     "inbounds": [
       {
         "tag": "socks",
@@ -26,33 +66,12 @@ String xrayFullConfig(ProxyConfig c) {
     ],
     "routing": {
       "domainStrategy": "IPIfNonMatch",
-      "rules": [
-        {
-          "type": "field",
-          "ip": ["geoip:private"],
-          "outboundTag": "direct",
-        },
-        {
-          "type": "field",
-          "domain": ["geosite:ir"],
-          "outboundTag": "direct",
-        },
-        {
-          "type": "field",
-          "ip": ["geoip:ir"],
-          "outboundTag": "direct",
-        },
-        {
-          "type": "field",
-          "inboundTag": ["socks"],
-          "outboundTag": "proxy",
-        },
-      ],
+      "rules": rules,
     },
   });
 }
 
-Map<String, dynamic> _outbound(ProxyConfig c) {
+Map<String, dynamic> _outbound(ProxyConfig c, ClientSettings s) {
   late Map<String, dynamic> settings;
   late String proto;
   if (c.protocol == "ss") {
@@ -124,6 +143,7 @@ Map<String, dynamic> _outbound(ProxyConfig c) {
     };
   }
 
+  final fp = c.fingerprint.isEmpty ? s.fingerprint : c.fingerprint;
   final stream = <String, dynamic>{
     "network": c.network.isEmpty ? "tcp" : c.network,
     "security": c.tls == "none" ? "none" : c.tls,
@@ -132,14 +152,14 @@ Map<String, dynamic> _outbound(ProxyConfig c) {
     stream["tlsSettings"] = {
       "serverName": c.sni,
       "allowInsecure": c.allowInsecure,
-      if (c.fingerprint.isNotEmpty) "fingerprint": c.fingerprint,
+      if (fp.isNotEmpty) "fingerprint": fp,
       if (c.alpn.isNotEmpty) "alpn": c.alpn.split(","),
     };
   }
   if (c.tls == "reality") {
     stream["realitySettings"] = {
       "serverName": c.sni,
-      "fingerprint": c.fingerprint.isEmpty ? "chrome" : c.fingerprint,
+      "fingerprint": fp.isEmpty ? "chrome" : fp,
       "publicKey": c.publicKey,
       "shortId": c.shortId,
       "spiderX": c.spiderX.isEmpty ? "/" : c.spiderX,
@@ -176,11 +196,22 @@ Map<String, dynamic> _outbound(ProxyConfig c) {
       "host": c.host,
     };
   }
+  if (s.fragmentEnabled) {
+    stream["sockopt"] = {
+      "dialerProxy": "",
+      "tcpNoDelay": true,
+    };
+  }
 
-  return {
+  final out = <String, dynamic>{
     "tag": "proxy",
     "protocol": proto,
     "settings": settings,
     "streamSettings": stream,
   };
+  if (s.muxEnabled && c.flow.isEmpty) {
+    out["mux"] = {"enabled": true, "concurrency": s.muxConcurrency};
+  }
+  return out;
 }
+

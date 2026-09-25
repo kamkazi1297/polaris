@@ -28,7 +28,7 @@ for perm in perms:
     if perm.split('android:name=')[1] not in t:
         t = t.replace("<application", perm + "\n    <application", 1)
 if 'android:usesCleartextTraffic' not in t:
-    t = t.replace("<application", '<application android:usesCleartextTraffic="true"', 1)
+    t = t.replace("<application", '<application android:usesCleartextTraffic="true" android:label="پولاریس"', 1)
 p.write_text(t)
 print("patched", p)
 PY

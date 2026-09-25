@@ -26,7 +26,14 @@ static class Store
         try
         {
             if (File.Exists(Paths.StateFile))
-                return JsonSerializer.Deserialize<AppState>(File.ReadAllText(Paths.StateFile)) ?? new AppState();
+            {
+                var s = JsonSerializer.Deserialize<AppState>(File.ReadAllText(Paths.StateFile)) ?? new AppState();
+                s.Entries ??= new();
+                s.Settings ??= new();
+                s.Subscriptions ??= new();
+                if (string.IsNullOrEmpty(s.SortMode)) s.SortMode = "valid";
+                return s;
+            }
         }
         catch { /* ignore */ }
         return new AppState();

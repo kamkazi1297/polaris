@@ -21,7 +21,8 @@ jobs:
       - name: Publish
         run: |
           dotnet publish win-client/src/Polaris/Polaris.csproj -c Release -r win-x64 --self-contained true `
-            -p:PublishSingleFile=false -p:PublishReadyToRun=true -p:DebugType=embedded -o dist
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true `
+            -p:PublishReadyToRun=true -p:DebugType=embedded -o dist
           Copy-Item win-client\packaging\Start-Polaris.bat dist\
           Copy-Item win-client\packaging\README.txt dist\
 
@@ -83,22 +84,23 @@ jobs:
 
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.2.${{ github.run_number }}
-          name: Polaris v1.2.${{ github.run_number }}
+          tag_name: v1.3.${{ github.run_number }}
+          name: Polaris v1.3.${{ github.run_number }}
           body: |
-            ## ویندوز
-            اگر نسخه قبلی باز نمی‌شد از **Polaris-Setup.exe** استفاده کنید (نصب می‌شود و میانبر می‌سازد).
+            ## ویندوز — اگر نسخه قبل باز نمی‌شد این را بگیرید
+            **Polaris-Setup.exe را نصب کنید** (نه فایل داخل زیپ).
 
-            1. Setup را اجرا کنید یا zip را کامل از حالت فشرده خارج کنید.
-            2. اگر چیزی باز نشد: `Start-Polaris.bat` را بزنید یا Properties → Unblock.
-            3. SmartScreen: More info → Run anyway.
+            1. Setup را اجرا کنید. میانبر دسکتاپ ساخته می‌شود.
+            2. SmartScreen: More info → Run anyway
+            3. ویندوز ۱۰/۱۱ ۶۴بیت لازم است.
+            4. اگر هنوز zip می‌خواهید: کل پوشه را Extract کنید و `Start-Polaris.bat` را بزنید.
 
             ## اندروید
-            1. `Polaris.apk` را دانلود کنید.
-            2. نصب از منابع ناشناس را اجازه دهید.
-            3. کانفیگ را وارد کنید، تست دیلی بگیرید، وصل شو را بزنید و VPN را تأیید کنید.
+            1. `Polaris.apk` را دانلود و نصب کنید (Unknown sources).
+            2. منو: ساب‌لینک، حذف تکراری، مرتب‌سازی معتبر، تنظیمات.
+            3. کانفیگ/ساب را وارد کنید، تست دیلی، وصل شو، VPN را تأیید کنید.
 
-            **قابلیت‌ها:** ورود لینک / نپسترنت / Clash / Xray / سابسکریپشن، تست دیلی، مکان سرور، تشخیص کانفیگ ایران (مشکل‌دار)، گزارش امنیت، وصل شدن واقعی.
+            **قابلیت‌ها:** ورود لینک / نپسترنت / Clash / Xray / سابسکریپشن، حذف تکراری، مرتب‌سازی بر اساس معتبر بودن و دیلی، تست دیلی، مکان سرور، تشخیص کانفیگ ایران (مشکل‌دار)، گزارش امنیت و نوع، تنظیمات Mux/Fragment/DNS.
           files: |
             windows/Polaris-windows-x64.zip
             windows/Polaris-Setup.exe

@@ -1,5 +1,5 @@
 #define MyAppName "Polaris"
-#define MyAppVersion "1.2.0"
+#define MyAppVersion "1.3.0"
 #define MyAppPublisher "Polaris"
 #define MyAppURL "https://github.com/kamkazi1297/polaris"
 #define MyAppExeName "Polaris.exe"

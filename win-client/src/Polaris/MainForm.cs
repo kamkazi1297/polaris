@@ -41,10 +41,11 @@ sealed class MainForm : Form
         var top = new FlowLayoutPanel
         {
             Dock = DockStyle.Top,
-            Height = 52,
+            Height = 92,
             Padding = new Padding(10, 8, 10, 8),
             BackColor = Surface,
-            WrapContents = false,
+            WrapContents = true,
+            AutoScroll = false,
         };
         _connectBtn = MkBtn("وصل شو", true);
         _connectBtn.Click += async (_, _) => await ConnectAsync();
@@ -56,14 +57,17 @@ sealed class MainForm : Form
         var del = MkBtn("حذف", false); del.Click += (_, _) => DeleteSelected();
         var clip = MkBtn("کلیپ‌بورد", false); clip.Click += async (_, _) => await ImportClipboardAsync();
         var set = MkBtn("تنظیمات", false); set.Click += (_, _) => OpenSettings();
-        top.Controls.AddRange(new Control[] { imp, clip, test, testAll, _connectBtn, disc, copy, del, set });
+        var subs = MkBtn("ساب‌لینک", false); subs.Click += async (_, _) => await OpenSubsAsync();
+        var dup = MkBtn("حذف تکراری", false); dup.Click += (_, _) => RemoveDuplicates();
+        var sort = MkBtn("مرتب‌سازی معتبر", false); sort.Click += (_, _) => SortValid();
+        top.Controls.AddRange(new Control[] { imp, clip, subs, test, testAll, _connectBtn, disc, copy, del, dup, sort, set });
 
         var hint = new Label
         {
             Dock = DockStyle.Top,
             Height = 36,
             Padding = new Padding(12, 8, 12, 8),
-            Text = "کلاینت ویندوز: هسته Xray را اجرا می‌کند و پروکسی سیستم را می‌گذارد. تست دیلی فقط پینگ TCP است. کانفیگ ایران = مشکل‌دار.",
+            Text = "اگر برنامه باز نشد از Polaris-Setup.exe استفاده کنید. تست دیلی فقط پینگ TCP است. سرور ایران = مشکل‌دار.",
             ForeColor = Muted,
             BackColor = Bg,
         };
@@ -157,6 +161,7 @@ sealed class MainForm : Form
 
     void RefreshList()
     {
+        SortInternal();
         var sel = Selected()?.Config.Id;
         _list.BeginUpdate();
         _list.Items.Clear();
@@ -276,14 +281,19 @@ sealed class MainForm : Form
     async Task AddParsedAsync(string raw)
     {
         raw = raw.Trim();
+        var group = "";
         if (raw.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || raw.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
         {
+            var url = raw.Split('\n')[0].Trim();
             _status.Text = "در حال دریافت سابسکریپشن…";
             try
             {
                 using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
-                http.DefaultRequestHeaders.UserAgent.ParseAdd("Polaris/1.0");
-                raw = await http.GetStringAsync(raw.Split('\n')[0].Trim());
+                http.DefaultRequestHeaders.UserAgent.ParseAdd("Polaris/1.3");
+                raw = await http.GetStringAsync(url);
+                group = new Uri(url).Host;
+                if (_state.Subscriptions.All(s => s.Url != url))
+                    _state.Subscriptions.Add(new Subscription { Name = group, Url = url, LastUpdate = DateTime.Now.ToString("s") });
             }
             catch (Exception ex)
             {
@@ -301,6 +311,7 @@ sealed class MainForm : Form
         var n = 0;
         foreach (var c in parsed)
         {
+            if (!string.IsNullOrEmpty(group)) c.Group = group;
             var key = $"{c.Protocol}|{c.Address}|{c.Port}|{c.Uuid}|{c.Password}";
             if (!existing.Add(key)) continue;
             _state.Entries.Insert(0, new ConfigEntry { Config = c, Health = Analyzer.Diagnose(c, null).Status });
@@ -340,6 +351,8 @@ sealed class MainForm : Form
                 await TestOne(e);
                 RefreshList();
             }
+            _state.SortMode = "valid";
+            RefreshList();
         }
         finally { _busy = false; }
     }
@@ -397,5 +410,133 @@ sealed class MainForm : Form
         _activeId = null;
         RefreshList();
         _status.Text = "قطع شد";
+    }
+
+    static string DupKey(ProxyConfig c) => $"{c.Protocol}|{c.Address}|{c.Port}|{c.Uuid}|{c.Password}";
+
+    void RemoveDuplicates()
+    {
+        var seen = new HashSet<string>();
+        var keep = new List<ConfigEntry>();
+        foreach (var e in _state.Entries)
+            if (seen.Add(DupKey(e.Config))) keep.Add(e);
+        var n = _state.Entries.Count - keep.Count;
+        _state.Entries = keep;
+        RefreshList();
+        MessageBox.Show(this, n == 0 ? "تکراری نبود." : $"{n} کانفیگ تکراری حذف شد.", "پولاریس");
+    }
+
+    void SortValid()
+    {
+        _state.SortMode = "valid";
+        RefreshList();
+        _status.Text = "مرتب شد: معتبرها بالا";
+    }
+
+    void SortInternal()
+    {
+        int Rank(string h) => h switch
+        {
+            "ok" => 0,
+            "warn" => 1,
+            "unknown" => 2,
+            "dead" => 3,
+            "broken" => 4,
+            "invalid" => 5,
+            _ => 6,
+        };
+        _state.Entries = _state.SortMode switch
+        {
+            "delay" => _state.Entries.OrderBy(e => e.Probe?.DelayMs ?? int.MaxValue).ToList(),
+            "name" => _state.Entries.OrderBy(e => e.Config.Remark).ToList(),
+            _ => _state.Entries.OrderBy(e => Rank(e.Health)).ThenBy(e => e.Probe?.DelayMs ?? int.MaxValue).ToList(),
+        };
+    }
+
+    async Task OpenSubsAsync()
+    {
+        using var dlg = new Form
+        {
+            Text = "ساب‌لینک‌ها",
+            Width = 560,
+            Height = 420,
+            RightToLeft = RightToLeft.Yes,
+            StartPosition = FormStartPosition.CenterParent,
+            BackColor = Surface,
+            ForeColor = Fg,
+            Font = Font,
+        };
+        var list = new ListBox { Dock = DockStyle.Fill, BackColor = Bg, ForeColor = Fg, BorderStyle = BorderStyle.None };
+        void Fill()
+        {
+            list.Items.Clear();
+            foreach (var s in _state.Subscriptions)
+                list.Items.Add($"{s.Name}  —  {s.Url}");
+        }
+        Fill();
+        var bar = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 48, Padding = new Padding(8) };
+        var add = MkBtn("افزودن", true);
+        add.Click += async (_, _) =>
+        {
+            var url = PromptText("آدرس سابسکریپشن (https):");
+            if (string.IsNullOrWhiteSpace(url)) return;
+            url = url.Trim();
+            if (!url.StartsWith("http", StringComparison.OrdinalIgnoreCase)) return;
+            var name = new Uri(url).Host;
+            if (_state.Subscriptions.All(s => s.Url != url))
+                _state.Subscriptions.Add(new Subscription { Name = name, Url = url });
+            await AddParsedAsync(url);
+            Fill();
+        };
+        var upd = MkBtn("به‌روزرسانی", false);
+        upd.Click += async (_, _) =>
+        {
+            if (list.SelectedIndex < 0 || list.SelectedIndex >= _state.Subscriptions.Count) return;
+            var s = _state.Subscriptions[list.SelectedIndex];
+            _state.Entries.RemoveAll(e => e.Config.Group == s.Name);
+            s.LastUpdate = DateTime.Now.ToString("s");
+            await AddParsedAsync(s.Url);
+            Fill();
+        };
+        var rm = MkBtn("حذف", false);
+        rm.Click += (_, _) =>
+        {
+            if (list.SelectedIndex < 0 || list.SelectedIndex >= _state.Subscriptions.Count) return;
+            var s = _state.Subscriptions[list.SelectedIndex];
+            _state.Entries.RemoveAll(e => e.Config.Group == s.Name);
+            _state.Subscriptions.RemoveAt(list.SelectedIndex);
+            Fill();
+            RefreshList();
+        };
+        bar.Controls.AddRange(new Control[] { add, upd, rm });
+        dlg.Controls.Add(list);
+        dlg.Controls.Add(bar);
+        dlg.ShowDialog(this);
+        Store.Save(_state);
+    }
+
+    string? PromptText(string title)
+    {
+        using var f = new Form
+        {
+            Text = title,
+            Width = 480,
+            Height = 140,
+            RightToLeft = RightToLeft.Yes,
+            StartPosition = FormStartPosition.CenterParent,
+            FormBorderStyle = FormBorderStyle.FixedDialog,
+            MaximizeBox = false,
+            MinimizeBox = false,
+            BackColor = Surface,
+            ForeColor = Fg,
+            Font = Font,
+        };
+        var box = new TextBox { Left = 16, Top = 16, Width = 430, BackColor = Bg, ForeColor = Fg, BorderStyle = BorderStyle.FixedSingle, Text = "https://" };
+        var ok = MkBtn("ثبت", true);
+        ok.Left = 16; ok.Top = 56;
+        ok.Click += (_, _) => { f.Tag = box.Text; f.DialogResult = DialogResult.OK; };
+        f.Controls.Add(box);
+        f.Controls.Add(ok);
+        return f.ShowDialog(this) == DialogResult.OK ? f.Tag as string : null;
     }
 }
