@@ -4,30 +4,27 @@
 
 ## دانلود
 
-از صفحهٔ [Releases](https://github.com/kamkazi1297/polaris/releases/latest) فایل `Polaris-windows-x64.zip` را بگیرید، از زیپ خارج کنید و `Polaris.exe` را اجرا کنید.
+از صفحهٔ [Releases](https://github.com/kamkazi1297/polaris/releases/latest):
 
-اگر SmartScreen آمد: **More info → Run anyway**. فایل امضا نشده چون گواهی کد ویندوز ندارد.
+- **Polaris-Setup.exe** — نصب‌کننده (پیشنهادی؛ میانبر می‌سازد)
+- **Polaris-windows-x64.zip** — نسخهٔ پرتابل
+
+اگر با کلیک روی exe چیزی باز نشد:
+
+1. کل پوشه را از ZIP خارج کنید.
+2. `Start-Polaris.bat` را اجرا کنید.
+3. یا راست‌کلیک روی `Polaris.exe` → Properties → Unblock.
+4. SmartScreen: **More info → Run anyway**.
 
 ## استفاده
 
-1. **ورود کانفیگ** یا **کلیپ‌بورد** — لینک، JSON نپسترنت، یا آدرس سابسکریپشن (`https://…`).
+1. **ورود کانفیگ** یا **کلیپ‌بورد** — لینک، JSON نپسترنت، یا آدرس سابسکریپشن.
 2. **تست دیلی** — پینگ TCP + مکان جغرافیایی سرور. اگر سرور ایران باشد برچسب مشکل‌دار می‌خورد.
 3. **وصل شو** — بار اول هستهٔ Xray را از گیت‌هاب رسمی XTLS می‌گیرد، بعد پروکسی سیستم ویندوز را روی `127.0.0.1:10809` می‌گذارد.
 4. **قطع** — پروکسی سیستم خاموش می‌شود.
-5. **تنظیمات** — Mux، Fragment، DNS، دور زدن ایران/LAN.
-
-سایت‌های ایران به‌صورت پیش‌فرض مستقیم می‌روند (bypass).
 
 ## محدودیت
 
-- حالت **system proxy** است، نه TUN کامل. بعضی برنامه‌ها پروکسی سیستم را رعایت نمی‌کنند.
-- تست دیلی handshake کامل پروتکل نیست؛ مکان، مکان خود سرور است نه IP خروجی داخل تونل.
-- Hysteria2 / TUIC / WireGuard با sing-box اجرا می‌شوند (بار اول دانلود می‌شود).
-
-## ساخت از سورس
-
-روی ویندوز با .NET 8:
-
-```
-dotnet publish src/Polaris/Polaris.csproj -c Release -r win-x64 --self-contained true
-```
+- حالت **system proxy** است، نه TUN کامل.
+- تست دیلی handshake کامل پروتکل نیست.
+- Hysteria2 / TUIC / WireGuard با sing-box اجرا می‌شوند.

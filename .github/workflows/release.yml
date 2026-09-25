@@ -1,0 +1,106 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Publish
+        run: |
+          dotnet publish win-client/src/Polaris/Polaris.csproj -c Release -r win-x64 --self-contained true `
+            -p:PublishSingleFile=false -p:PublishReadyToRun=true -p:DebugType=embedded -o dist
+          Copy-Item win-client\packaging\Start-Polaris.bat dist\
+          Copy-Item win-client\packaging\README.txt dist\
+
+      - name: Zip portable
+        run: Compress-Archive -Path dist\* -DestinationPath Polaris-windows-x64.zip -Force
+
+      - name: Installer
+        run: |
+          choco install innosetup --no-progress -y
+          New-Item -ItemType Directory -Force -Path win-client\installer\dist | Out-Null
+          Copy-Item -Path dist\* -Destination win-client\installer\dist -Recurse -Force
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" win-client\installer\polaris.iss
+          Copy-Item win-client\installer\Polaris-Setup.exe .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: |
+            Polaris-windows-x64.zip
+            Polaris-Setup.exe
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Build APK
+        run: |
+          set -euo pipefail
+          flutter create --org app.polaris --project-name polaris --platforms android build_android
+          rm -rf build_android/lib
+          cp -r android-client/lib build_android/lib
+          cp android-client/pubspec.yaml build_android/pubspec.yaml
+          bash android-client/tool/patch_android.sh build_android
+          cd build_android
+          flutter pub get
+          flutter build apk --release
+          cp build/app/outputs/flutter-apk/app-release.apk ../Polaris.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: Polaris.apk
+
+  release:
+    needs: [windows, android]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.2.${{ github.run_number }}
+          name: Polaris v1.2.${{ github.run_number }}
+          body: |
+            ## ویندوز
+            اگر نسخه قبلی باز نمی‌شد از **Polaris-Setup.exe** استفاده کنید (نصب می‌شود و میانبر می‌سازد).
+
+            1. Setup را اجرا کنید یا zip را کامل از حالت فشرده خارج کنید.
+            2. اگر چیزی باز نشد: `Start-Polaris.bat` را بزنید یا Properties → Unblock.
+            3. SmartScreen: More info → Run anyway.
+
+            ## اندروید
+            1. `Polaris.apk` را دانلود کنید.
+            2. نصب از منابع ناشناس را اجازه دهید.
+            3. کانفیگ را وارد کنید، تست دیلی بگیرید، وصل شو را بزنید و VPN را تأیید کنید.
+
+            **قابلیت‌ها:** ورود لینک / نپسترنت / Clash / Xray / سابسکریپشن، تست دیلی، مکان سرور، تشخیص کانفیگ ایران (مشکل‌دار)، گزارش امنیت، وصل شدن واقعی.
+          files: |
+            windows/Polaris-windows-x64.zip
+            windows/Polaris-Setup.exe
+            android/Polaris.apk
+          make_latest: true

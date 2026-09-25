@@ -27,7 +27,6 @@ sealed class SettingsForm : Form
         Width = 460;
         Height = 620;
         RightToLeft = RightToLeft.Yes;
-        RightToLeftLayout = true;
         StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;

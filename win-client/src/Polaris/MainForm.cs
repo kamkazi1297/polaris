@@ -1,7 +1,3 @@
-using System.Drawing.Drawing2D;
-
-using System.Drawing.Drawing2D;
-
 namespace Polaris;
 
 sealed class MainForm : Form
@@ -27,7 +23,7 @@ sealed class MainForm : Form
         Paths.Ensure();
         _state = Store.Load();
         RightToLeft = RightToLeft.Yes;
-        RightToLeftLayout = true;
+        StartPosition = FormStartPosition.CenterScreen;
         Text = "پولاریس";
         Width = 1100;
         Height = 720;
@@ -78,7 +74,6 @@ sealed class MainForm : Form
             View = View.Details,
             FullRowSelect = true,
             MultiSelect = false,
-            OwnerDraw = true,
             BackColor = Surface,
             ForeColor = Fg,
             BorderStyle = BorderStyle.None,
@@ -92,13 +87,6 @@ sealed class MainForm : Form
         _list.Columns.Add("امنیت", 110);
         _list.SelectedIndexChanged += (_, _) => ShowDetail();
         _list.DoubleClick += async (_, _) => await ConnectAsync();
-        _list.DrawColumnHeader += (_, e) =>
-        {
-            e.Graphics.FillRectangle(new SolidBrush(Surface), e.Bounds);
-            TextRenderer.DrawText(e.Graphics, e.Header!.Text, Font, e.Bounds, Muted, TextFormatFlags.Right | TextFormatFlags.VerticalCenter);
-        };
-        _list.DrawItem += (_, e) => { };
-        _list.DrawSubItem += ListDrawSubItem;
 
         _detail = new TextBox
         {
@@ -109,7 +97,7 @@ sealed class MainForm : Form
             BorderStyle = BorderStyle.None,
             BackColor = Bg,
             ForeColor = Fg,
-            Font = new Font("Cascadia Mono", 9f),
+            Font = new Font("Consolas", 9f),
         };
 
         var split = new SplitContainer
@@ -158,20 +146,6 @@ sealed class MainForm : Form
         };
         b.FlatAppearance.BorderColor = Color.FromArgb(42, 46, 54);
         return b;
-    }
-
-    void ListDrawSubItem(object? sender, DrawListViewSubItemEventArgs e)
-    {
-        var selected = e.Item!.Selected;
-        e.Graphics.FillRectangle(new SolidBrush(selected ? Color.FromArgb(32, 36, 42) : Surface), e.Bounds);
-        var color = Fg;
-        if (e.ColumnIndex == 2)
-        {
-            var st = e.SubItem!.Text;
-            color = st.Contains("مشکل") || st.Contains("نامعتبر") ? Bad : st.Contains("سالم") ? Ok : Muted;
-        }
-        TextRenderer.DrawText(e.Graphics, e.SubItem!.Text, Font, e.Bounds, color,
-            TextFormatFlags.Right | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
     }
 
     ConfigEntry? Selected()
@@ -277,13 +251,12 @@ sealed class MainForm : Form
             Width = 640,
             Height = 480,
             RightToLeft = RightToLeft.Yes,
-            RightToLeftLayout = true,
             StartPosition = FormStartPosition.CenterParent,
             BackColor = Surface,
             ForeColor = Fg,
             Font = Font,
         };
-        var box = new TextBox { Multiline = true, Dock = DockStyle.Fill, ScrollBars = ScrollBars.Both, Font = new Font("Cascadia Mono", 9f), BackColor = Bg, ForeColor = Fg, BorderStyle = BorderStyle.FixedSingle };
+        var box = new TextBox { Multiline = true, Dock = DockStyle.Fill, ScrollBars = ScrollBars.Both, Font = new Font("Consolas", 9f), BackColor = Bg, ForeColor = Fg, BorderStyle = BorderStyle.FixedSingle };
         var ok = MkBtn("افزودن", true);
         ok.Dock = DockStyle.Bottom;
         ok.Height = 40;
